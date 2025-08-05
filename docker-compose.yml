@@ -1,0 +1,143 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "3322:5672"
+      - "15672:15672"
+    env_file:
+      - .env
+    volumes:
+      - ./rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+    networks:
+      - server_network
+
+  redis:
+    image: redis:8
+    env_file:
+      - listing_service/.env
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - ./redis_data:/data
+    restart: always
+    networks:
+      - server_network
+
+  auth_db:
+    image: mysql:8.0
+    env_file:
+      - auth_service/.env
+    ports:
+      - '${AUTH_DB_PORT}:3306'
+    volumes:
+      - ./auth_mysql:/var/lib/mysql
+    restart: on-failure
+    networks:
+      - server_network
+
+  listing_db:
+    image: mysql:8.0
+    env_file:
+      - listing_service/.env
+    ports:
+      - '${LISTING_DB_PORT}:3306'
+    volumes:
+      - ./listing_mysql:/var/lib/mysql
+    restart: on-failure
+    networks:
+      - server_network
+
+  bot_mongo_db:
+    image: mongo:8.0
+    env_file:
+      - task_service/.env
+    ports:
+      - '${MONGO_DB_PORT}:27017'
+    volumes:
+      - ./task_mongo_db:/data/db
+    restart: on-failure
+    networks:
+      - server_network
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    volumes:
+      - ./gateway:/app/gateway
+    env_file:
+      - gateway/.env
+    ports:
+      - "${GATEWAY_PORT}:8080"
+    networks:
+      - server_network
+    command: >
+      sh -c "sleep 90 && uvicorn gateway.main:app --host 0.0.0.0 --port 8080"
+
+  auth:
+    build:
+      context: .
+      dockerfile: auth_service/Dockerfile
+    volumes:
+      - ./auth_service:/app/auth_service
+      - ./shared:/app/shared
+    depends_on:
+      - auth_db
+      - rabbitmq
+    env_file:
+      - .env
+      - auth_service/.env
+    ports:
+      - '${AUTH_BACKEND_APP}:8000'
+    networks:
+      - server_network
+    command: >
+      sh -c "sleep 60 && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  listing:
+    build:
+      context: .
+      dockerfile: listing_service/Dockerfile
+    volumes:
+      - ./listing_service:/app/listing_service
+      - ./shared:/app/shared
+      - ./listing_service/media:/media
+    depends_on:
+      - listing_db
+    env_file:
+      - .env
+      - listing_service/.env
+    ports:
+      - '${LISTING_BACKEND_APP}:8000'
+    networks:
+      - server_network
+    command: >
+      sh -c "sleep 60 && poetry run python start_listing_service.py"
+
+  task:
+    build:
+      context: .
+      dockerfile: task_service/Dockerfile
+    volumes:
+      - ./task_service:/app/task_service
+      - ./shared:/app/shared
+      - ./auth_service/app/models:/app/auth_service/app/models
+      - ./listing_service/app/models:/app/listing_service/app/models
+    depends_on:
+      - auth_db
+      - listing_db
+      - rabbitmq
+    env_file:
+      - scripts/.env.shared
+      - task_service/.env
+      - .env
+    restart: always
+    networks:
+      - server_network
+    command: >
+      sh -c "sleep 90 && poetry run python task_startup.py"
+
+networks:
+  server_network:
+    driver: bridge

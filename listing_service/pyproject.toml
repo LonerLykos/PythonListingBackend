@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "listing_service"
+version = "0.1.0"
+description = ""
+authors = ["LonerLykos <loner.lykos.project@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+shared = {path = "../shared", develop = false}
+sqlalchemy = "^2.0.41"
+asyncmy = "^0.2.10"
+python-jose = {extras = ["cryptography"], version = "^3.5.0"}
+alembic = "^1.16.1"
+uvicorn = "^0.34.3"
+httpx = "^0.28.1"
+better-profanity = "^0.7.0"
+pillow = "^11.2.1"
+email-validator = "^2.2.0"
+redis = "^6.2.0"
+python-multipart = "^0.0.20"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.0"
+pytest-asyncio = "^1.0.0"
+pytest-mock = "^3.14.1"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "unit: mark a test as a unit test",
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

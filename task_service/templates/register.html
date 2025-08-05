@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 5px;">
+    <h2 style="color: #333;">Welcome to Our Platform!</h2>
+    <p style="color: #333;">Thanks, {{ username }}, for registering. To verify your account, please click the button below:</p>
+    <p style="text-align: center; margin: 25px 0;">
+        <a href="{{ verify_url }}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 3px;">Verify Your Account</a>
+    </p>
+    <p style="color: #333;">Or copy this link: <a href="{{ verify_url }}">{{ verify_url }}</a></p>
+    <p style="color: #333;">If you didn’t sign up, please ignore this email.</p>
+    <div class="footer" style="margin-top: 50px; font-size: 12px; color: #777; text-align: center;">
+        <p>© 2025 PythonRia. All rights reserved.</p>
+    </div>
+</div>
+{% endblock %}
